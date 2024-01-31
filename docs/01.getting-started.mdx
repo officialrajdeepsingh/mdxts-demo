@@ -1,0 +1,169 @@
+# Getting Started
+
+<Summary>
+
+MDXTS generates a graph of prose content, type documentation, and examples that can be rendered through components and utilities using [React 18 Server Components](https://react.dev/blog/2023/03/22/react-labs-what-we-have-been-working-on-march-2023#react-server-components).
+
+</Summary>
+
+<Note>
+  Server Component support is currently limited in frameworks. This library
+  offers first-class support for Next.js through a [plugin](packages/next).
+  Please open an issue or PR if you are interested in supporting other
+  frameworks.
+</Note>
+
+## Install
+
+To get started, run the following command to install the required dependencies:
+
+<PackageInstall
+  packages={['mdxts', 'next', 'react', 'react-dom', 'shiki', 'prettier']}
+/>
+
+## Guided Setup
+
+### Configuring the Next.js Plugin
+
+Once the `mdxts` package is installed, you can configure the Next.js plugin to use a custom theme and git source:
+
+```ts filename="next.config.ts"
+import { createMdxtsPlugin } from 'mdxts/next'
+
+const withMdxts = createMdxtsPlugin({
+  theme: 'nord',
+})
+
+export default withMdxts({
+  // Next.js config options...
+})
+```
+
+### Defining a Data Source
+
+Use the `createSource` utility to generate metadata and helpers for MDX and TypeScript source files that can be used to build routes for content and documentation:
+
+```ts filename="data.ts"
+import { createSource } from 'mdxts'
+
+export const allDocs = createSource('docs/**/*.mdx')
+
+allDocs.paths() // => [['docs', 'getting-started'], ['docs, 'authoring']]
+```
+
+Visit the [routing](/routing) section for more information on how to use `paths` to generate routes.
+
+### Rendering Content
+
+Use the `get` method from the data source to retrieve the metadata for a specific source file and render it:
+
+```tsx filename="blog/[slug]/page.tsx"
+import { notFound } from 'next/navigation'
+import { allDocs } from '../../data'
+
+type Props = { params: { slug: string } }
+
+export default async function Page({ params }: Props) {
+  const doc = await allDocs.get(params.slug)
+
+  if (doc === undefined) {
+    return notFound()
+  }
+
+  const { Content } = doc
+
+  return <Content />
+}
+```
+
+If the targeted source file is a TypeScript file, its types will also be analyzed and included along with other metadata:
+
+```tsx filename="components/[slug]/page.tsx"
+import { createSource } from 'mdxts'
+import { notFound } from 'next/navigation'
+
+type Props = { params: { slug: string } }
+
+const allComponents = createSource('components/**/*.tsx')
+
+export default async function Page({ params }: Props) {
+  const component = await allComponents.get(params.slug)
+
+  if (component === undefined) {
+    return notFound()
+  }
+
+  const { Content, exportedTypes } = component
+
+  return (
+    <>
+      <Content />
+      <ul>
+        {exportedTypes.map((type) => (
+          <li key={type.name}>
+            <h4>{type.name}</h4>
+            <p>{type.description}</p>
+            {type.types.map((type) =>
+              type.properties ? (
+                <ul>
+                  {type.properties.map((property) => (
+                    <li key={property.name}>
+                      <h5>{property.name}</h5>
+                      <p>{property.description}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                type.text
+              )
+            )}
+          </li>
+        ))}
+      </ul>
+    </>
+  )
+}
+```
+
+### Examples
+
+To associate examples with a source file, create a sibling file with the same name and a `.examples.tsx` extension:
+
+```tsx filename="components/Button.tsx"
+export const Button = ({ children }) => <button>{children}</button>
+```
+
+```tsx filename="components/Button.examples.tsx"
+import { Button } from './Button'
+
+export const Basic = () => <Button>Click Me</Button>
+```
+
+Read more about [examples](/examples/authoring) to learn how to use them to generate interactive documentation.
+
+### Type Checking
+
+All code blocks will automatically be type-checked using the TypeScript compiler. Notice the following will throw a type error:
+
+```tsx
+const a = 1
+a + b
+```
+
+Pass `allowErrors` to disable type checking:
+
+````mdx
+```tsx allowErrors
+const a = 1
+a + b
+```
+````
+
+```tsx allowErrors
+const a = 1
+a + b
+```
+
+## Next Steps
+
+Check out the [routing](./routing) section to learn how to generate routes for your content and documentation.

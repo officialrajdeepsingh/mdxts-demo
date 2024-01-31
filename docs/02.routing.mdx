@@ -1,0 +1,40 @@
+# Routing
+
+Define file glob patterns using `createSource`, for example:
+
+- `**/\*.mdx` matches all MDX files in all directories.
+
+- `src/**/\*.ts` targets all TypeScript files in the `src` directory and its subdirectories.
+
+## Content
+
+MDX files primarily serve as the content layer in your documentation. The content can be rendered using the `Content` component exported from the data source:
+
+```tsx filename="blog/[slug]/page.tsx"
+import { createSource } from "mdxts";
+import { notFound } from "next/navigation";
+
+const allDocs = createSource("docs/**/*.mdx");
+
+type Props = { params: { slug: string } };
+
+export default async function Page({ params }: Props) {
+  const doc = await allDocs.get(params.slug);
+
+  if (doc === undefined) return notFound();
+
+  const { Content } = doc;
+
+  return <Content />;
+}
+```
+
+## Type Inference
+
+When targeting TypeScript source files, the type checker is used to infer the types of all exports from `index.(ts|tsx)` files. If `package.json` exports are defined for the package, they will be used to narrow the set of exports to analyze when generating type documentation.
+
+## Naming Conventions
+
+Source files named `Component.tsx` can have an accompanying `Component.mdx`. This is the same for hooks or utilities like `useHook.ts` and `useHook.mdx`.
+
+For `index.ts` or `index.tsx`, the accompanying file can be `index.md`, `index.mdx`, `README.md`, or `README.mdx`.
