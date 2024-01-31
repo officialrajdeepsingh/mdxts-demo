@@ -1,10 +1,10 @@
-import { createMdxtsPlugin } from 'mdxts/next';
+/** @type {import('next').NextConfig} */
+
+import { createMdxtsPlugin } from "mdxts/next";
 
 const withMdxts = createMdxtsPlugin({
-    theme: 'nord'
+  theme: "theme.json",
+  gitSource: "git@github.com:officialrajdeepsingh/mdxts-demo",
 });
 
-/** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default withMdxts(nextConfig);
+export default withMdxts({});
